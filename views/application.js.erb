@@ -1,18 +1,43 @@
-var scheme   = "<%= @scheme %>";
+var scheme   = "ws://";
 var uri      = scheme + window.document.location.host + "/";
 var ws       = new WebSocket(uri);
+
+var canvas = document.getElementById('game');
+var ctx = canvas.getContext('2d');
+canvas.width = Math.min(window.innerWidth,1920);
+canvas.height = Math.min(window.innerHeight,1080);
+var cells=[];
+var r = Math.floor(Math.random()*256);
+var g = Math.floor(Math.random()*256);
+var b = Math.floor(Math.random()*256);
+
+function getMousePos(canvas, e) {
+        var rect = canvas.getBoundingClientRect();
+        return {
+          x: Math.round((e.clientX-rect.left)/(rect.right-rect.left)*canvas.width),
+          y: Math.round((e.clientY-rect.top)/(rect.bottom-rect.top)*canvas.height)
+        };
+}
+
+function onClick(e){
+  var mousePos = getMousePos(canvas, e);
+  ws.send(JSON.stringify({ type: "new", x: Math.floor(mousePos.x*192/window.innerWidth), y: Math.floor(mousePos.y*108/window.innerHeight), r:r, g:g, b:b}));
+}
+
+canvas.addEventListener('click', onClick, false);
+
+function draw(){
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  cells.forEach(function(cell){
+    ctx.fillStyle="rgb("+cell.r+","+cell.g+","+cell.b+")";
+    ctx.fillRect(cell.x*window.innerWidth/192,cell.y*window.innerHeight/108, window.innerWidth/192, window.innerHeight/108);
+  });
+}
 ws.onmessage = function(message) {
   var data = JSON.parse(message.data);
-  $("#chat-text").append("<div class='panel panel-default'><div class='panel-heading'>" + data.handle + "</div><div class='panel-body'>" + data.text + "</div></div>");
-  $("#chat-text").stop().animate({
-    scrollTop: $('#chat-text')[0].scrollHeight
-  }, 800);
+  var currentdate = new Date();
+  console.log(currentdate.getSeconds())
+  cells = data.list;  
+  draw();
 };
 
-$("#input-form").on("submit", function(event) {
-  event.preventDefault();
-  var handle = $("#input-handle")[0].value;
-  var text   = $("#input-text")[0].value;
-  ws.send(JSON.stringify({ handle: handle, text: text }));
-  $("#input-text")[0].value = "";
-});
