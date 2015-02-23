@@ -1,27 +1,28 @@
 require 'faye/websocket'
 require 'thread'
-require 'json'
 require 'erb'
-
+require 'json'
 require 'faye/websocket'
 
-module ChatDemo
-  class ChatBackend
+module GameofLife
+  class GameBackend
     KEEPALIVE_TIME = 15 # in seconds
 
     def initialize(app)
       @app     = app
       @clients = []
+      @msg
       @game = Game.new(192,108)
       Thread.new do
         last_tick = Time.now
         while true do
-          if(Time.now - last_tick >= 0.5)
+          if((Time.now - last_tick)*1.0 >= 0.9)
             @game.tick
             last_tick = Time.now
+            @msg=@game.to_json
+            @clients.each {|client| client.send(@msg) }
           end
-          @clients.each {|client| client.send(@game.to_s) }
-          sleep 0.2
+          sleep 0.1
         end
       end
     end
@@ -32,7 +33,7 @@ module ChatDemo
         ws.on :open do |event|
           p [:open, ws.object_id]
           @clients << ws
-          ws.send(@game.to_s)
+          ws.send(@msg)
         end
 
         ws.on :message do |event|
@@ -41,7 +42,8 @@ module ChatDemo
           if data['type'] == 'new'
             if ((data['x'].is_a? Integer) && (data['y'].is_a? Integer) && (data['r'].is_a? Integer) && (data['g'].is_a? Integer) && (data['b'].is_a? Integer))
             @game.load(data['x'],data['y'],data['r'],data['g'],data['b'])
-            @clients.each {|client| client.send(@game.to_s) }
+            @msg=@game.to_json
+            @clients.each {|client| client.send(@msg) }
             end
           end
            
@@ -62,11 +64,6 @@ module ChatDemo
       end
     end
 
-    private
-    def sanitize(message)
-      json = JSON.parse(message)
-      json.each {|key, value| json[key] = ERB::Util.html_escape(value) }
-      JSON.generate(json)
-    end
+    
   end
 end

@@ -6,3 +6,25 @@ overflow: hidden;
 canvas {
 display: block;
 }
+#menu{
+	margin:10px;
+	position:absolute;
+	top:0px;
+	left:0px;
+}
+#menu ul{
+	display:none;
+}
+#menu:hover ul{
+	display:block;
+}
+
+#menu ul li{
+	padding:10px;
+}
+#menu ul li:hover{
+	background-color:#EEF;
+}
+#menu ul li:active{
+	background-color:#AAF;
+}

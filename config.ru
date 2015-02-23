@@ -2,6 +2,6 @@ require './app'
 require './middlewares/chat_backend'
 require './game'
 Faye::WebSocket.load_adapter('thin')
-use ChatDemo::ChatBackend
+use GameofLife::GameBackend
 
-run ChatDemo::App
+run GameofLife::App

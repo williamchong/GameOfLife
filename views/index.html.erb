@@ -1,14 +1,21 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Ruby WebSockets Chat Demo</title>
+    <title>GameofLife</title>
     <link href="assets/css/application.css" rel="stylesheet" media="screen">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
   </head>
   <body>
   <canvas id="game" width="1920" height="1080"></canvas>
+  <div id="menu">
+    <h4>Spawn Menu</h4>
+    <ul><li id="p1" value=0>Single</li>
+    <li id="p2" value=1>Blinker</li>
+    <li id="p3" value=2>Block</li>
+    <li id="p4" value=3>Glider</li>
+    <li id="p5" value=4>Beacon</li></ul>
+  </div>
 
-    <script type="text/javascript" src="assets/js/jquery-2.0.3.min.js"></script>
     <script type="text/javascript" src="assets/js/application.js"></script>
   </body>
 </html>

@@ -1,5 +1,5 @@
 #forked from https://github.com/spaghetticode/game-of-life-ruby
-module ChatDemo
+module GameofLife
   class Game
     LIVE = [2,3]
     BORN = [3]
@@ -17,12 +17,12 @@ module ChatDemo
       r=Integer(r)
       g=Integer(g)
       b=Integer(b)
-      if y>=0 && x>=0 && y<=rows && x<=cols
+      if y>=0 && x>=0 && y<=cols && x<=rows
         grid[x][y]=[1,r,g,b]
        end
     end
 
-    def to_s
+    def to_json
       cordList=[]
       grid.each_with_index do |row, y|
         row.each_with_index do |cell, x|
@@ -40,39 +40,35 @@ module ChatDemo
       neighbors(y,x).select {|cell| cell[0] == 1}.size
     end
 
+    def get_rgb(y,x,count)
+      cells=neighbors(y,x).select {|cell| cell[0] == 1}
+      r=0
+      g=0
+      b=0
+      cells.each do |cell|
+       r+=cell[1]
+       g+=cell[2]
+       b+=cell[3]                 
+      end
+      r/=count
+      g/=count
+      b/=count
+      rgb=[1,r,g,b]
+    end
+
     def tick
       new_grid = build_grid
       grid.each_with_index do |row, y|
         row.each_with_index do |cell, x|
           count = live_neighbors_count(y,x)
-          new_grid[y][x][0] = begin
-            if cell[0].zero?
+           if cell[0].zero?
               if BORN.include?(count)
-                cells=neighbors(y,x).select {|cell| cell[0] == 1}
-                r=0
-                g=0
-                b=0
-                cells.each do |cell|
-                  r+=cell[1]
-                  g+=cell[2]
-                  b+=cell[3]                 
-                end
-                r/=count
-                g/=count
-                b/=count
-                new_grid[y][x]=[1,r,g,b]
-                1
-              else
-                0
+                new_grid[y][x]=get_rgb(y,x,count)
               end
-            else
+          else
               if LIVE.include?(count) 
                 new_grid[y][x]=grid[y][x]
-                1
-              else
-                0
               end
-            end
           end
         end
       end

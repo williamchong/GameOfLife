@@ -1,12 +1,16 @@
 var scheme   = "ws://";
 var uri      = scheme + window.document.location.host + "/";
 var ws       = new WebSocket(uri);
-
+var patterns =[[[0,0]],[[0,0],[0,1],[0,2]],[[0,0],[0,1],[1,0],[1,1]],[[0,0],[2,0],[1,1],[1,2],[2,1]],[[0,0],[1,0],[0,1],[2,3],[3,2],[3,3]]]
 var canvas = document.getElementById('game');
 var ctx = canvas.getContext('2d');
 canvas.width = Math.min(window.innerWidth,1920);
 canvas.height = Math.min(window.innerHeight,1080);
 var cells=[];
+var oldcells=[];
+var preview=[];
+var alpha = 0, oldalpha=1, delta = 0.1;
+var curPattern = 0;
 var r = Math.floor(Math.random()*256);
 var g = Math.floor(Math.random()*256);
 var b = Math.floor(Math.random()*256);
@@ -21,23 +25,74 @@ function getMousePos(canvas, e) {
 
 function onClick(e){
   var mousePos = getMousePos(canvas, e);
-  ws.send(JSON.stringify({ type: "new", x: Math.floor(mousePos.x*192/window.innerWidth), y: Math.floor(mousePos.y*108/window.innerHeight), r:r, g:g, b:b}));
+  if (curPattern!=0){
+    patterns[curPattern].forEach(function(cord){
+      ws.send(JSON.stringify({ type: "new", x: Math.floor(mousePos.x*192/window.innerWidth)+cord[0], y: Math.floor(mousePos.y*108/window.innerHeight)+cord[1], r:r, g:g, b:b}));
+    })
+  }else{
+   ws.send(JSON.stringify({ type: "new", x: Math.floor(mousePos.x*192/window.innerWidth), y: Math.floor(mousePos.y*108/window.innerHeight), r:r, g:g, b:b}));
+  }
 }
-
+function onMove(e){
+  var mousePos = getMousePos(canvas, e);
+  preview=[];
+  patterns[curPattern].forEach(function(cord){
+      preview.push({x: Math.floor(mousePos.x*192/window.innerWidth)+cord[0], y: Math.floor(mousePos.y*108/window.innerHeight)+cord[1],r:200,g:200,b:200})
+  });
+  requestAnimationFrame(draw);
+  
+ }
+function onResize(e) {
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+};
+window.addEventListener("resize", onResize, false);
 canvas.addEventListener('click', onClick, false);
+canvas.addEventListener('mousemove', onMove, false);
 
 function draw(){
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.globalAlpha = oldalpha;
+  oldcells.forEach(function(cell){
+    ctx.fillStyle="rgb("+cell.r+","+cell.g+","+cell.b+")";
+    ctx.fillRect(cell.x*window.innerWidth/192,cell.y*window.innerHeight/108, window.innerWidth/192, window.innerHeight/108);
+  });
+  ctx.globalAlpha = alpha;
+  if (cells.length == 0){
+    ctx.fillStyle='#000';
+    ctx.fillText('Click to spawn cells!', canvas.width/2, canvas.height/2);
+  }
   cells.forEach(function(cell){
     ctx.fillStyle="rgb("+cell.r+","+cell.g+","+cell.b+")";
     ctx.fillRect(cell.x*window.innerWidth/192,cell.y*window.innerHeight/108, window.innerWidth/192, window.innerHeight/108);
   });
+  ctx.globalAlpha = 1;
+  preview.forEach(function(cell){
+    ctx.fillStyle="rgb("+cell.r+","+cell.g+","+cell.b+")";
+    ctx.fillRect(cell.x*window.innerWidth/192,cell.y*window.innerHeight/108, window.innerWidth/192, window.innerHeight/108);
+  });
+  if ((alpha+=delta)>1) {
+    alpha=1
+    oldalpha= 0
+  }else{
+    oldalpha-=delta
+    requestAnimationFrame(draw);
+  }
 }
+
 ws.onmessage = function(message) {
   var data = JSON.parse(message.data);
-  var currentdate = new Date();
-  console.log(currentdate.getSeconds())
+  alpha=0;
+  oldalpha=1;
+  oldcells=cells;
   cells = data.list;  
-  draw();
+  requestAnimationFrame(draw);
 };
-
+function onPattern(e){
+  curPattern=this.value;
+}
+document.getElementById('p1').addEventListener('click', onPattern);
+document.getElementById('p2').addEventListener('click', onPattern);
+document.getElementById('p3').addEventListener('click', onPattern);
+document.getElementById('p4').addEventListener('click', onPattern);
+document.getElementById('p5').addEventListener('click', onPattern);
